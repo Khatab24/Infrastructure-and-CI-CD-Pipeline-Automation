@@ -7,7 +7,7 @@ This project aims to demonstrate a complete workflow for creating, configuring, 
 
 
 # Objectives
-# 1-Infrastructure Creation:
+## 1-Infrastructure Creation:
 
 Set up a scalable and secure cloud infrastructure using Terraform modules.
 Create a Virtual Private Cloud (VPC) with a 2 public subnet for hosting EC2 and EKS.
