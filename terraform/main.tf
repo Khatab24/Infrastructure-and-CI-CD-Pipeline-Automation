@@ -1,5 +1,4 @@
-
-# the provider
+# The provider
 provider "aws" {
   region     = var.aws_region
 }
@@ -12,7 +11,6 @@ resource "aws_vpc" "my_vpc" {
     Name = "my_vpc"
   }
 }
-
 # create public subnets in two different AZs
 resource "aws_subnet" "public_subnet_a" {
   vpc_id                  = aws_vpc.my_vpc.id
@@ -40,7 +38,6 @@ resource "aws_internet_gateway" "igw" {
     Name = "my_internet_gateway"
   }
 }
-
 # route table
 resource "aws_route_table" "public_route_table" {
   vpc_id = aws_vpc.my_vpc.id
@@ -48,26 +45,21 @@ resource "aws_route_table" "public_route_table" {
     Name = "public_route_table"
   }
 }
-
 # route for internet gateway
 resource "aws_route" "default_route" {
   route_table_id         = aws_route_table.public_route_table.id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.igw.id
 }
-
-# associate route table with subnet
+# associate route table with subnets
 resource "aws_route_table_association" "public_subnet_a_association" {
   subnet_id      = aws_subnet.public_subnet_a.id
   route_table_id = aws_route_table.public_route_table.id
 }
-
 resource "aws_route_table_association" "public_subnet_b_association" {
   subnet_id      = aws_subnet.public_subnet_b.id
   route_table_id = aws_route_table.public_route_table.id
 }
-
-
 # key pair
 # ================================================================================
 # create key pair for connecting to EC2 by SSH
@@ -87,8 +79,6 @@ resource "local_file" "private_key" {
   filename = var.private_key_path
   file_permission = "400"
 }
-
-
 # create security group
 # ===================================================================================
 resource "aws_security_group" "sg_ec2" {
@@ -124,21 +114,10 @@ resource "aws_security_group" "sg_ec2" {
   }
 }
 
-
-
-
-
-
 # Step 3: Create an IAM Instance Profile for the EC2 instance
 resource "aws_iam_instance_profile" "eks_instance_access" {
   role = aws_iam_role.eks_node_group_role.name
 }
-
-
-
-
-
-
 # create EC2 instance
 # ================================================================================
 resource "aws_instance" "public_instance" {
@@ -211,8 +190,6 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_AmazonEKSServicePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
   role       = aws_iam_role.eks_cluster_role.name
 }
-
-
 # create EKS cluster
 #===================================================================
 resource "aws_eks_cluster" "eks_cluster" {
@@ -228,8 +205,6 @@ resource "aws_eks_cluster" "eks_cluster" {
     aws_iam_role_policy_attachment.eks_cluster_AmazonEKSServicePolicy
   ]
 }
-
-
 # EKS node role
 # ===========================================================================
 resource "aws_iam_role" "eks_node_group_role" {
@@ -289,7 +264,6 @@ resource "aws_iam_role_policy" "eks_worker_node_ssh_policy" {
     ]
   })
 }
-
 # EKS NODE GROUP
 # ==============================================================================================================================================
 resource "aws_eks_node_group" "eks_node_group" {
