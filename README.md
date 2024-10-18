@@ -3,6 +3,9 @@
 # Infrastructure as Code with Terraform, Ansible, and Kubernetes CI/CD Pipeline
 This project aims to demonstrate a complete workflow for creating, configuring, and deploying a web application infrastructure using modern DevOps practices and tools. The solution leverages Terraform for infrastructure provisioning, Ansible for configuration management, Kubernetes for container orchestration, and Jenkins for Continuous Integration and Continuous Deployment (CI/CD).
 
+![Infrastructure-and-CI-CD-Pipeline-Automation drawio (1)](https://github.com/user-attachments/assets/e1a330f2-3fe9-4e21-b989-f043be2988ae)
+
+
 # Objectives
 # 1-Infrastructure Creation:
 
