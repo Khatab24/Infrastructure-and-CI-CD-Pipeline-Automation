@@ -48,21 +48,7 @@
       yum:
         name: aws-cli
         state: present
-#=================================================================================================
 
- #   - name: Download the latest release of kubectl
-  #    command: curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
-   #   args:
-    #    chdir: /tmp
-
-   # - name: Make kubectl binary executable
-    #  command: chmod +x /tmp/kubectl
-#
- #   - name: Move kubectl to /usr/local/bin
-  #    command: mv /tmp/kubectl /usr/local/bin/kubectl
-
-#=====================================================================================================
-  
 
 
 
