@@ -1,8 +1,7 @@
-# The provider
+# the provider
 provider "aws" {
   region     = var.aws_region
 }
-
 # create VPC
 resource "aws_vpc" "my_vpc" {
   cidr_block = var.vpc_cidr_block
@@ -21,7 +20,6 @@ resource "aws_subnet" "public_subnet_a" {
     Name = "Public_Subnet_A"
   }
 }
-
 resource "aws_subnet" "public_subnet_b" {
   vpc_id                  = aws_vpc.my_vpc.id
   cidr_block              = var.public_subnet_cidr_block_b
@@ -60,27 +58,7 @@ resource "aws_route_table_association" "public_subnet_b_association" {
   subnet_id      = aws_subnet.public_subnet_b.id
   route_table_id = aws_route_table.public_route_table.id
 }
-# key pair
-# ================================================================================
-# create key pair for connecting to EC2 by SSH
-resource "tls_private_key" "rsa_4096" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
-
-resource "aws_key_pair" "key_pair" {
-  key_name   = var.key_name
-  public_key = tls_private_key.rsa_4096.public_key_openssh
-}
-
-# save the private key in the specific path on my lactop 
-resource "local_file" "private_key" {
-  content  = tls_private_key.rsa_4096.private_key_pem
-  filename = var.private_key_path
-  file_permission = "400"
-}
 # create security group
-# ===================================================================================
 resource "aws_security_group" "sg_ec2" {
   vpc_id      = aws_vpc.my_vpc.id
   name        = "sg_ec2"
@@ -113,18 +91,13 @@ resource "aws_security_group" "sg_ec2" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-
-# Step 3: Create an IAM Instance Profile for the EC2 instance
-resource "aws_iam_instance_profile" "eks_instance_access" {
-  role = aws_iam_role.eks_node_group_role.name
-}
 # create EC2 instance
 # ================================================================================
 resource "aws_instance" "public_instance" {
   ami                    = var.ami_id  
   instance_type          = "t2.micro"
   key_name               = aws_key_pair.key_pair.key_name
-  iam_instance_profile   = aws_iam_instance_profile.eks_instance_access.name
+# iam_instance_profile   = aws_iam_instance_profile.eks_instance_access.name
   vpc_security_group_ids = [aws_security_group.sg_ec2.id]
   subnet_id              = aws_subnet.public_subnet_a.id
   associate_public_ip_address = true
@@ -140,7 +113,7 @@ resource "aws_instance" "public_instance" {
 }
 # EKS Cluster Role
 #=======================================================
-resource "aws_iam_role" "eks_cluster_role" {
+resource "aws_iam_role" "eks_master_role" {
   name = "eks-cluster-role"
 
   assume_role_policy = jsonencode({
@@ -155,54 +128,33 @@ resource "aws_iam_role" "eks_cluster_role" {
   })
 }
 
-resource "aws_iam_policy_attachment" "eks_policy_attachment" {
-  name       = "eks-cluster-policy-attachment"
-  roles      = [aws_iam_role.eks_cluster_role.name]
-  policy_arn = aws_iam_policy.eks_permissions.arn
+resource "aws_iam_role_policy_attachment" "AmazonEKSVPCResourceController" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
+  role       = aws_iam_role.eks_master_role.name
 }
-#=========================================================================================
-resource "aws_iam_policy" "eks_permissions" {
-  name        = "EKSDescribeAndListPolicy"
-  description = "IAM policy to allow describe and list actions for EKS"
-  
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "eks:DescribeCluster",
-          "eks:ListClusters",
-          "eks:ListNodegroups"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "eks_cluster_AmazonEKSClusterPolicy" {
+resource "aws_iam_role_policy_attachment" "AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.eks_cluster_role.name
+  role       = aws_iam_role.eks_master_role.name
 }
 
-resource "aws_iam_role_policy_attachment" "eks_cluster_AmazonEKSServicePolicy" {
+resource "aws_iam_role_policy_attachment" "AmazonEKSServicePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
-  role       = aws_iam_role.eks_cluster_role.name
+  role       = aws_iam_role.eks_master_role.name
 }
 # create EKS cluster
 #===================================================================
 resource "aws_eks_cluster" "eks_cluster" {
   name     = var.cluster_name
-  role_arn = aws_iam_role.eks_cluster_role.arn
+  role_arn = aws_iam_role.eks_master_role.arn
 
   vpc_config {
     subnet_ids = [aws_subnet.public_subnet_a.id, aws_subnet.public_subnet_b.id]
   }
 
   depends_on = [
-    aws_iam_role_policy_attachment.eks_cluster_AmazonEKSClusterPolicy,
-    aws_iam_role_policy_attachment.eks_cluster_AmazonEKSServicePolicy
+    aws_iam_role_policy_attachment.AmazonEKSVPCResourceController,
+    aws_iam_role_policy_attachment.AmazonEKSClusterPolicy,
+    aws_iam_role_policy_attachment.AmazonEKSServicePolicy
   ]
 }
 # EKS node role
@@ -224,46 +176,24 @@ resource "aws_iam_role" "eks_node_group_role" {
   })
 }
 
-# Step 2: Attach AmazonEKSClusterPolicy to IAM Role
-resource "aws_iam_role_policy_attachment" "eks_cluster_policy_attachment" {
+resource "aws_iam_role_policy_attachment" "AmazonSSMManagedInstanceCore" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   role       = aws_iam_role.eks_node_group_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
-
-resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
+resource "aws_iam_role_policy_attachment" "AmazonEKSWorkerNodePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = aws_iam_role.eks_node_group_role.name
 }
-
-resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
+resource "aws_iam_role_policy_attachment" "AmazonEKS_CNI_Policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
   role       = aws_iam_role.eks_node_group_role.name
 }
-
-resource "aws_iam_role_policy_attachment" "eks_registry_policy" {
+resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.eks_node_group_role.name
 }
 
-# role to SSH access to the node group
-#===========================================================================================
-resource "aws_iam_role_policy" "eks_worker_node_ssh_policy" {
-  name        = "EKSWorkerNodeSSHAccess"
-  role        = aws_iam_role.eks_node_group_role.id
-  policy      = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "ec2-instance-connect:SendSSHPublicKey"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
 # EKS NODE GROUP
 # ==============================================================================================================================================
 resource "aws_eks_node_group" "eks_node_group" {
@@ -286,37 +216,54 @@ resource "aws_eks_node_group" "eks_node_group" {
 
   depends_on = [
     aws_security_group.sg_ec2,
-    aws_iam_role_policy_attachment.eks_worker_node_policy,
-    aws_iam_role_policy_attachment.eks_cni_policy,
-    aws_iam_role_policy_attachment.eks_registry_policy,
+    aws_iam_role_policy_attachment.AmazonSSMManagedInstanceCore,
+    aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy,
+    aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy,
+    aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly,
   ]
 
   tags = {
     Name = "eks_node_group"
   }
 }
-
-#outputs
-#==========================================================================
-output "vpc_id" {
-  value = aws_vpc.my_vpc.id
+# create key pair for connecting to EC2 by SSH
+# ================================================================================
+resource "tls_private_key" "rsa_4096" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
 }
 
-output "public_subnet_a_id" {
-  value = aws_subnet.public_subnet_a.id
+resource "aws_key_pair" "key_pair" {
+  key_name   = var.key_name
+  public_key = tls_private_key.rsa_4096.public_key_openssh
 }
 
-
-output "public_subnet_b_id" {
-  value = aws_subnet.public_subnet_b.id
+# save the private key in the specific path on my lactop 
+resource "local_file" "private_key" {
+  content  = tls_private_key.rsa_4096.private_key_pem
+  filename = var.private_key_path
+  file_permission = "400"
 }
-
-
-output "ec2_instance_id" {
-  value = aws_instance.public_instance.id
+# Create an IAM Instance Profile for the EC2 instance
+resource "aws_iam_instance_profile" "eks_instance_access" {
+  role = aws_iam_role.eks_node_group_role.name
 }
-
-output "eks_cluster_name" {
-  value = aws_eks_cluster.eks_cluster.name
+# role to SSH access to the node group
+#===========================================================================================
+resource "aws_iam_role_policy" "eks_worker_node_ssh_policy" {
+  name        = "EKSWorkerNodeSSHAccess"
+  role        = aws_iam_role.eks_node_group_role.id
+  policy      = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2-instance-connect:SendSSHPublicKey"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
 }
 
