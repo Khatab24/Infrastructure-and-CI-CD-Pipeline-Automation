@@ -1,40 +1,60 @@
 # Infrastructure-and-CI-CD-Pipeline-Automation
-# Project Overview
-# Infrastructure as Code with Terraform, Ansible, and Kubernetes CI/CD Pipeline
 This project aims to demonstrate a complete workflow for creating, configuring, and deploying a web application infrastructure using modern DevOps practices and tools. The solution leverages Terraform for infrastructure provisioning, Ansible for configuration management, Kubernetes for container orchestration, and Jenkins for Continuous Integration and Continuous Deployment (CI/CD).
 
 ![Infrastructure-and-CI-CD-Pipeline-Automation drawio (1)](https://github.com/user-attachments/assets/e1a330f2-3fe9-4e21-b989-f043be2988ae)
+### Prerequisites : 
+  - [Terraform](https://www.terraform.io/downloads.html)
+  - [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
+  - [AWS CLI](https://aws.amazon.com/cli/)
+  - [kubectl](https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html)
+  - [Jenkins](https://www.jenkins.io/doc/book/installing/)
 
+     
+### 1-Clone the Repository
+```scss
+git clone https://github.com/Khatab24/Infrastructure-and-CI-CD-Pipeline-Automation.git
+cd Infrastructure-and-CI-CD-Pipeline-Automation
+```
 
-# Objectives
-### 1-Infrastructure Creation:
+### 2-AWS Configuration
+```scss
+aws configure
+```
 
-Set up a scalable and secure cloud infrastructure using Terraform modules.
-Create a Virtual Private Cloud (VPC) with a 2 public subnet for hosting EC2 and EKS.
-Deploy an EC2 instance within the public subnet, ensuring it has internet access.
-Provision a Kubernetes cluster using Elastic Kubernetes Service (EKS) within the same VPC.
-### 2-Configuration Management:
+### 3-Deploy AWS Infrastructure using Terraform
+```scss
+cd terraform-Infra
+terraform init
+terraform plan
+terraform apply
+```
+### 4-Deploy Jenkins to EC2 using Ansible
+```scss
+cd ../ansible-jenkins-setup
+ansible-playbook -i inventory jenkins.yml
+```
+### 5-Prepare GitHub Repository
+# (Instructions: Create two branches, add Dockerfile, Kubernetes files, Jenkinsfile, and set up webhook)
 
-Automate the installation of Jenkins and requirements on the EC2 instance using Ansible playbooks, ensuring a consistent setup.
-### 3-Source Code Management:
+### 6-Kubernetes Configuration
+```scss
+aws eks --region <region> update-kubeconfig --name <cluster_name>
+kubectl create namespace dev
+kubectl create namespace prod
+```
+### 7-Prerequisites for Jenkins
+```scss
+sudo apt-get install awscli
+sudo apt-get install kubectl
+```
+### 8-Access Jenkins
+### Open Jenkins UI in your browser:
+### http://<EC2_INSTANCE_IP>:8080
 
-Prepare a GitHub repository for a simple web project(RedStore), establishing a clear structure with Dev branche.
-Write a Dockerfile to containerize the web application, ensuring it runs consistently across environments.
-Create necessary Kubernetes deployment and service files to manage the application lifecycle.
-### 4-Kubernetes Configuration:
+### 9-Install Jenkins plugins (Docker and Kubernetes)
 
-Implement namespace in the Kubernetes cluster:Dev.
-Deploy the application using Load Balancer services on namespace, exposing it externally for user access.
-### 5-CI/CD Pipeline Setup:
+### 10-Add AWS and GitHub credentials to Jenkins
 
-Integrate Jenkins with GitHub to automate the CI/CD process, enabling seamless deployments.
-Create pipeline for the Dev branche, automating the build and deployment of Docker images.
-Configure a GitHub webhook to trigger deployments upon code pushes, ensuring that the Dev branch updates the Dev namespace.
+### 11-Create a new Jenkins Pipeline
+### 12-Add Jenkinsfile repo URL, define branches, and configure webhook
 
-### Technologies Used
-- Terraform: Infrastructure provisioning and management.
-- Ansible: Configuration management and automation.
-- Kubernetes: Container orchestration and management.
-- AWS EKS: Managed Kubernetes service.
-- Jenkins: Continuous Integration and Continuous Deployment.
-- Docker: Containerization of applications.
