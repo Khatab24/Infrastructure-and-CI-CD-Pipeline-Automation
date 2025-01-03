@@ -34,7 +34,7 @@ cd ../ansible-jenkins-setup
 ansible-playbook -i inventory jenkins.yml
 ```
 ### 5-Prepare GitHub Repository
-# (Instructions: Create two branches, add Dockerfile, Kubernetes files, Jenkinsfile, and set up webhook)
+## (Instructions: Create two branches, add Dockerfile, Kubernetes files, Jenkinsfile, and set up webhook)
 
 ### 6-Kubernetes Configuration
 ```scss
