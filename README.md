@@ -30,8 +30,8 @@ terraform apply
 ```
 ### 4-Deploy Jenkins to EC2 using Ansible
 ```scss
-cd ../ansible-jenkins-setup
-ansible-playbook -i inventory jenkins.yml
+cd ../ansible
+ansible-playbook -i inventory install-jenkins.yml
 ```
 ### 5-Prepare GitHub Repository
 ## (Instructions: Create two branches, add Dockerfile, Kubernetes files, Jenkinsfile, and set up webhook)
@@ -39,6 +39,7 @@ ansible-playbook -i inventory jenkins.yml
 ### 6-Kubernetes Configuration
 ```scss
 aws eks --region <region> update-kubeconfig --name <cluster_name>
+cd k8s/dev
 kubectl create namespace dev
 kubectl create namespace prod
 ```
